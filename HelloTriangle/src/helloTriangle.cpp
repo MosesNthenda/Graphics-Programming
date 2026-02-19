@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 
-unsigned int positionBufferObject;
+GLuint positionBufferObject;
 GLuint theProgram;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -23,6 +23,7 @@ const float VertexPositions[] = {
 
 void initializeVertexBuffer() {
 
+    glGenBuffers(1, &positionBufferObject);
     glBindBuffer(GL_ARRAY_BUFFER, positionBufferObject);
     glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPositions), VertexPositions, GL_STATIC_DRAW);
 }
@@ -31,7 +32,7 @@ const char *chVertexShader = "#version 330\n"
 
     "layout(location = 0) in vec4 position;\n"
     "void main() {\n"
-        "gl_position = position;\n"
+        "gl_Position = position;\n"
     "}\0";
 
 const char *chFragmentShader = "#version 330\n"
@@ -54,7 +55,7 @@ GLuint compileShader(GLenum shaderType, const char *shaderFile){
 
     if(!success) {
         glGetShaderInfoLog(comShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
     return comShader;
@@ -75,6 +76,7 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList) {
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::PROGRAM::LINKING::FAILED\n" << infoLog << std::endl;
     }
     return shaderProgram;
 }
