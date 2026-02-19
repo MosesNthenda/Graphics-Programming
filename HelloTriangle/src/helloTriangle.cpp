@@ -5,6 +5,7 @@
 
 GLuint positionBufferObject;
 GLuint theProgram;
+GLuint vao;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
@@ -21,66 +22,129 @@ const float VertexPositions[] = {
     -0.75f, -0.75f, 0.0f, 1.0f
 };
 
+const std::string strVertexShader("#version 330\n"
+
+    "layout(location = 0) in vec4 position;\n"
+    "void main() {\n"
+        "gl_Position = position;\n"
+    "}\0");
+
+const std::string strFragmentShader("#version 330\n"
+    "out vec4 outputColor;\n"
+    "void main() {\n"
+        "outputColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "}\0");
+
+GLuint CreateShader(GLenum eShaderType, const std::string &strShaderFile)
+{
+    GLuint shader = glCreateShader(eShaderType);
+    const char *strFileData = strShaderFile.c_str();
+    glShaderSource(shader, 1, &strFileData, NULL);
+    
+    glCompileShader(shader);
+    
+    GLint status;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        GLint infoLogLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+        
+        GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+        glGetShaderInfoLog(shader, infoLogLength, NULL, strInfoLog);
+        
+        const char *strShaderType = NULL;
+        switch(eShaderType)
+        {
+        case GL_VERTEX_SHADER: strShaderType = "vertex"; break;
+        case GL_GEOMETRY_SHADER: strShaderType = "geometry"; break;
+        case GL_FRAGMENT_SHADER: strShaderType = "fragment"; break;
+        }
+        
+        fprintf(stderr, "Compile failure in %s shader:\n%s\n", strShaderType, strInfoLog);
+        delete[] strInfoLog;
+    }
+
+	return shader;
+}
+
+GLuint CreateProgram(const std::vector<GLuint> &shaderList)
+{
+    GLuint program = glCreateProgram();
+    
+    for(size_t iLoop = 0; iLoop < shaderList.size(); iLoop++)
+    	glAttachShader(program, shaderList[iLoop]);
+    
+    glLinkProgram(program);
+    
+    GLint status;
+    glGetProgramiv (program, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        GLint infoLogLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+        
+        GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+        glGetProgramInfoLog(program, infoLogLength, NULL, strInfoLog);
+        fprintf(stderr, "Linker failure: %s\n", strInfoLog);
+        delete[] strInfoLog;
+    }
+    
+    for(size_t iLoop = 0; iLoop < shaderList.size(); iLoop++)
+        glDetachShader(program, shaderList[iLoop]);
+
+    return program;
+}
+
 void initializeVertexBuffer() {
 
     glGenBuffers(1, &positionBufferObject);
     glBindBuffer(GL_ARRAY_BUFFER, positionBufferObject);
     glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPositions), VertexPositions, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-const char *chVertexShader = "#version 330\n"
+void initializeProgram() {
+    
+    std::vector<GLuint> shaderList;
+    
+    shaderList.push_back(CreateShader(GL_VERTEX_SHADER, strVertexShader));
+    shaderList.push_back(CreateShader(GL_FRAGMENT_SHADER, strFragmentShader));
+    
+    theProgram = CreateProgram(shaderList);
 
-    "layout(location = 0) in vec4 position;\n"
-    "void main() {\n"
-        "gl_Position = position;\n"
-    "}\0";
-
-const char *chFragmentShader = "#version 330\n"
-    "out vec4 outputColor;\n"
-    "void main() {\n"
-        "outputColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\0";
-
-GLuint compileShader(GLenum shaderType, const char *shaderFile){
-
-    unsigned int comShader;
-
-    comShader = glCreateShader(shaderType);
-    glShaderSource(comShader, 1, &shaderFile, NULL);
-    glCompileShader(comShader);
-
-    int success;
-    char infoLog[512];
-    glGetShaderiv(comShader, GL_COMPILE_STATUS, &success);
-
-    if(!success) {
-        glGetShaderInfoLog(comShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+    for(GLuint shader : shaderList) {
+        glDeleteShader(shader);
     }
-
-    return comShader;
 }
 
-GLuint CreateProgram(const std::vector<GLuint> &shaderList) {
 
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
+void init() {
 
-    for(size_t i = 0; i < shaderList.size(); i++)
-        glAttachShader(shaderProgram, shaderList[i]);
+    initializeProgram();
+    initializeVertexBuffer();
 
-    glLinkProgram(shaderProgram);
-
-    int success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if(!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::PROGRAM::LINKING::FAILED\n" << infoLog << std::endl;
-    }
-    return shaderProgram;
+    glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 }
 
+
+void display() {
+    
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(theProgram);
+
+    glBindBuffer(GL_ARRAY_BUFFER, positionBufferObject);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glDisableVertexAttribArray(0);
+    glUseProgram(0);
+}
 
 int main() {
 
@@ -109,29 +173,7 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    unsigned int vshader1;
-    unsigned int fshader1;
-
-    vshader1 = compileShader(GL_VERTEX_SHADER, chVertexShader);
-    fshader1= compileShader(GL_FRAGMENT_SHADER, chFragmentShader);
-
-    std::vector<GLuint> shaderList;
-    shaderList.push_back(vshader1);
-    shaderList.push_back(fshader1);
-
-    theProgram = CreateProgram(shaderList);
-
-    for(unsigned int shader : shaderList) {
-        glDeleteShader(shader);
-    }
-
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    initializeVertexBuffer();
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0); 
+    init();
 
     while(!glfwWindowShouldClose(window)) {
         
@@ -139,13 +181,8 @@ int main() {
         processInput(window);
 
         //rendering commands here
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glUseProgram(theProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        display();
+    
         //check and call events and swap the buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
