@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 
-GLuint positionBufferObject;
+GLuint vertexBufferObject;
 GLuint theProgram;
 GLuint vao;
 
@@ -16,28 +16,35 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
 }
 
-const float VertexPositions[] = {
-    0.75f, 0.75f, 0.0f, 1.0f,
-    0.75f, -0.75f, 0.0f, 1.0f,
-    -0.75f, -0.75f, 0.0f, 1.0f
+const float vertexData[] = {
+    0.0f, 0.5f, 0.0f, 1.0f,
+    0.5f, -0.366f, 0.0f, 1.0f,
+    -0.5f, -0.366f, 0.0f, 1.0f,
+    1.0f, 0.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f, 0.0f, 1.0f, 1.0f,
 };
 
 const std::string strVertexShader("#version 330\n"
 
     "layout(location = 0) in vec4 position;\n"
+    "layout(location = 1) in vec4 color;\n"
+
+    "smooth out vec4 theColor;\n"
+
     "void main() {\n"
         "gl_Position = position;\n"
+        "theColor = color;\n"
     "}\0");
 
 const std::string strFragmentShader("#version 330\n"
 
+    "smooth in vec4 theColor;\n"
     "out vec4 outputColor;\n"
-
-    "float lerpValue = gl_FragCoord.y / 500.0f;\n"
-
     "void main() {\n"
-        "outputColor = mix(vec4(1.0f, 1.0f, 1.0f, 1.0f),\n"
-        "vec4(0.2f, 0.2f, 0.2f, 0.2f), lerpValue);\n"
+
+        "outputColor = theColor;\n"
+
     "}\0");
 
 GLuint CreateShader(GLenum eShaderType, const std::string &strShaderFile)
@@ -103,9 +110,9 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList)
 
 void initializeVertexBuffer() {
 
-    glGenBuffers(1, &positionBufferObject);
-    glBindBuffer(GL_ARRAY_BUFFER, positionBufferObject);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPositions), VertexPositions, GL_STATIC_DRAW);
+    glGenBuffers(1, &vertexBufferObject);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -141,13 +148,16 @@ void display() {
 
     glUseProgram(theProgram);
 
-    glBindBuffer(GL_ARRAY_BUFFER, positionBufferObject);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
     glUseProgram(0);
 }
 
