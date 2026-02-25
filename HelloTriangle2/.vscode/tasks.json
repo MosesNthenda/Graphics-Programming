@@ -9,7 +9,7 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${workspaceFolder}\\Hello Triangle.exe",
+                "${workspaceFolder}\\HelloTriangle2.exe",
                 "-I${workspaceFolder}/dependencies/include",
                 "-I./include",
                 "-L${workspaceFolder}/dependencies/lib",
