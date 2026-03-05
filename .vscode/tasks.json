@@ -3,13 +3,14 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++.exe build active file",
-            "command": "C:\\Program Files\\mingw64\\bin\\g++.exe",
+            "command": "C:\\mingw64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}","dependencies/src/shader.cpp",
+                "${file}",
+                "dependencies/src/shader.cpp",
                 "-o",
-                "${workspaceFolder}\\${fileBasenameNoExtension}.exe",
+                "${workspaceFolder}/${fileBasenameNoExtension}.exe",
                 "-I${workspaceFolder}/dependencies/include",
                 "-I./include",
                 "-L${workspaceFolder}/dependencies/lib",

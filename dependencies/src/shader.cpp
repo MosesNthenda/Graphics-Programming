@@ -23,7 +23,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath){
         fShaderFile.open(fragmentPath);
         //read file's buffer contents into streams
         vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << vShaderFile.rdbuf();
+        fShaderStream << fShaderFile.rdbuf();
         // close file handlers
         vShaderFile.close();
         fShaderFile.close();

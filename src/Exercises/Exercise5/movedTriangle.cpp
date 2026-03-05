@@ -44,7 +44,7 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    Shader upsideShader("../../../shaders/upsideDown.glsl", "../../../shaders/fshader.glsl");
+    Shader upsideShader("../../../shaders/hOffset.glsl", "../../../shaders/fshader.glsl");
 
     float vertices[] {
         //positions         //colors
@@ -80,7 +80,10 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        float offset = 0.3;
+        int vertexLocation = glGetUniformLocation(upsideShader.ID, "offset");
         upsideShader.use();
+        glUniform3f(vertexLocation, offset, offset, offset);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
